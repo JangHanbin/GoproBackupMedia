@@ -230,6 +230,14 @@ class Downloader:
         filename = item.get("filename") or f"{media_id}.mp4"
         created_at = item.get("created_at", "")
 
+        # Inject media_id into filename to guarantee uniqueness (fixes burst photo overwrites)
+        if media_id not in filename:
+            parts = filename.rsplit(".", 1)
+            if len(parts) == 2:
+                filename = f"{parts[0]}_{media_id}.{parts[1]}"
+            else:
+                filename = f"{filename}_{media_id}"
+
         # Build output filename
         if created_at:
             date_prefix = created_at[:10].replace("-", "")
