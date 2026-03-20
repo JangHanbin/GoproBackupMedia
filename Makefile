@@ -25,7 +25,7 @@ help:
 # Docker configuration
 CONTAINER_NAME ?= gopro-backup
 BUILD_PLATFORMS ?= linux/amd64,linux/arm64,linux/arm/v7
-IMAGE := janghanbin/gopro-backup
+IMAGE := dork94/gopro-backup
 VERSION := $(shell cat VERSION.txt)
 IMAGE_WITH_VERSION = $(IMAGE):$(VERSION)
 

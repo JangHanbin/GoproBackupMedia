@@ -5,7 +5,7 @@
 > GoPro Plus 클라우드에 저장된 미디어를 안정적으로 대량 백업하기 위한 도구.
 > 웹 UI의 25개 파일 다운로드 제한을 우회하며, 재시도·병렬 처리·ZIP 손상 감지를 지원함.
 
-- **Docker Hub**: [janghanbin/gopro-backup](https://hub.docker.com/r/janghanbin/gopro-backup)
+- **Docker Hub**: [dork94/gopro-backup](https://hub.docker.com/r/dork94/gopro-backup)
 - **GitHub**: [JangHanbin/GoproBackupMedia](https://github.com/JangHanbin/GoproBackupMedia)
 
 ---
@@ -43,7 +43,7 @@ docker run --rm \
   -e AUTH_TOKEN='<YOUR_TOKEN>' \
   -e USER_ID='<YOUR_ID>' \
   -v $(pwd)/download:/app/download \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ### 미디어 목록만 확인
@@ -53,7 +53,7 @@ docker run --rm \
   -e AUTH_TOKEN='<YOUR_TOKEN>' \
   -e USER_ID='<YOUR_ID>' \
   -e ACTION=list \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ### 개별 파일로 병렬 다운로드 (대용량 라이브러리 권장)
@@ -65,7 +65,7 @@ docker run --rm \
   -e DOWNLOAD_MODE=individual \
   -e WORKERS=5 \
   -v $(pwd)/download:/app/download \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ---
@@ -164,7 +164,7 @@ docker run --rm \
   -e UPLOAD_PASS=ftppassword \
   -e UPLOAD_PATH=/gopro-backup \
   -v $(pwd)/download:/app/download \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ### SMB/NAS 예시
@@ -181,7 +181,7 @@ docker run --rm \
   -e UPLOAD_PASS=password \
   -e UPLOAD_PATH=/gopro \
   -v $(pwd)/download:/app/download \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ---

@@ -4,7 +4,7 @@
 
 > **Reliable bulk download tool for GoPro Plus cloud media** — bypass the 25-file download limit, with robust retry logic, parallel downloads, and ZIP corruption detection.
 
-🐳 **Docker Hub**: [janghanbin/gopro-backup](https://hub.docker.com/r/janghanbin/gopro-backup)
+🐳 **Docker Hub**: [dork94/gopro-backup](https://hub.docker.com/r/dork94/gopro-backup)
 📦 **GitHub**: [JangHanbin/GoproBackupMedia](https://github.com/JangHanbin/GoproBackupMedia)
 
 ---
@@ -44,7 +44,7 @@ docker run --rm \
   -e AUTH_TOKEN='<YOUR_TOKEN>' \
   -e USER_ID='<YOUR_ID>' \
   -v $(pwd)/download:/app/download \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ### List media without downloading
@@ -54,7 +54,7 @@ docker run --rm \
   -e AUTH_TOKEN='<YOUR_TOKEN>' \
   -e USER_ID='<YOUR_ID>' \
   -e ACTION=list \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ### Download individual files (recommended for large libraries)
@@ -66,7 +66,7 @@ docker run --rm \
   -e DOWNLOAD_MODE=individual \
   -e WORKERS=5 \
   -v $(pwd)/download:/app/download \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ---
@@ -165,7 +165,7 @@ docker run --rm \
   -e UPLOAD_PASS=ftppassword \
   -e UPLOAD_PATH=/gopro-backup \
   -v $(pwd)/download:/app/download \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ### SMB/NAS Example
@@ -182,7 +182,7 @@ docker run --rm \
   -e UPLOAD_PASS=password \
   -e UPLOAD_PATH=/gopro \
   -v $(pwd)/download:/app/download \
-  janghanbin/gopro-backup:latest
+  dork94/gopro-backup:latest
 ```
 
 ---
