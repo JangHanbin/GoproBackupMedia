@@ -156,7 +156,7 @@ class Downloader:
     def _download_page_as_zip(self, page: int, media: list):
         """Download a page of media as a ZIP file with integrity verification."""
         ids = [item["id"] for item in media]
-        filenames = [item.get("filename", "unknown") for item in media]
+        filenames = [item.get("filename") or "unknown" for item in media]
         filepath = os.path.join(self.download_path, f"page_{page}.zip")
 
         logger.info("Downloading page %d as ZIP (%d items: %s)", page, len(ids), filenames)
@@ -227,7 +227,7 @@ class Downloader:
     def _download_individual_item(self, item: dict):
         """Download a single media item. Uses streaming upload when available."""
         media_id = item.get("id", "")
-        filename = item.get("filename", f"{media_id}.mp4")
+        filename = item.get("filename") or f"{media_id}.mp4"
         created_at = item.get("created_at", "")
 
         # Build output filename
