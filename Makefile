@@ -1,4 +1,4 @@
-.PHONY: help build release run stop logs clean
+.PHONY: help build release push-readme run stop logs clean
 
 help:
 	@echo "GoPro Backup Media — Docker Management"
@@ -8,6 +8,7 @@ help:
 	@echo "Targets:"
 	@echo "  build      Build the Docker image for the current platform"
 	@echo "  release    Build and push multi-platform Docker image to Docker Hub"
+	@echo "  push-readme Push the README.md as Docker Hub overview (requires DOCKER_USER, DOCKER_PASS)"
 	@echo "  run        Run the Docker container"
 	@echo "  stop       Stop the Docker container"
 	@echo "  logs       Tail logs from the Docker container"
@@ -53,6 +54,18 @@ release:
 		-t $(IMAGE_WITH_VERSION) \
 		-t $(IMAGE):latest \
 		--push .
+
+push-readme:
+	@if [ -z "$(DOCKER_USER)" ] || [ -z "$(DOCKER_PASS)" ]; then \
+		echo "ERROR: DOCKER_USER and DOCKER_PASS must be set."; \
+		exit 1; \
+	fi
+	@echo "Updating Docker Hub overview..."
+	@docker run --rm -v "$(PWD)":/workspace \
+		-e DOCKER_USER="$(DOCKER_USER)" \
+		-e DOCKER_PASS="$(DOCKER_PASS)" \
+		peterevans/dockerhub-description:3 \
+		$(IMAGE) /workspace/README.md
 
 run: clean
 	@docker run -d --name $(CONTAINER_NAME) \
