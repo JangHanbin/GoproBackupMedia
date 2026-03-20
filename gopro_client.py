@@ -231,18 +231,21 @@ class GoProClient:
                             for key in ("source", "url", "download"):
                                 if key in url_data:
                                     return url_data[key]
-                # If _embedded contains files
-                files = data.get("_embedded", {}).get("files", [])
-                if files and "url" in files[0]:
-                    return files[0]["url"]
                 variations = data.get("_embedded", {}).get("variations", [])
                 if variations:
-                    # Prefer 'source' variation
+                    # Always prefer the original 'source' variation first
                     for v in variations:
                         if v.get("label") == "source" and "url" in v:
                             return v["url"]
-                    if "url" in variations[0]:
-                        return variations[0]["url"]
+
+                # Fallback to the first available file
+                files = data.get("_embedded", {}).get("files", [])
+                if files and "url" in files[0]:
+                    return files[0]["url"]
+
+                # Fallback to the first variation if no files exist
+                if variations and "url" in variations[0]:
+                    return variations[0]["url"]
             except (ValueError, KeyError):
                 pass
 
