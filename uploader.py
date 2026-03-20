@@ -15,12 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 class UploadError(Exception):
-    """업로드 실패 시 발생하는 예외."""
+    """Raised when an upload fails after all retries."""
     pass
 
 
 class BaseUploader(ABC):
-    """업로드 프로토콜 공통 인터페이스."""
+    """Common interface for upload protocols."""
 
     def __init__(self, remote_path: str = "/", retry_count: int = 3, retry_delay: int = 5):
         self.remote_path = remote_path
@@ -29,38 +29,38 @@ class BaseUploader(ABC):
 
     @abstractmethod
     def connect(self):
-        """원격 서버에 연결."""
+        """Connect to remote server."""
         pass
 
     @abstractmethod
     def disconnect(self):
-        """연결 종료."""
+        """Disconnect from remote server."""
         pass
 
     @abstractmethod
     def _upload_file(self, local_path: str, remote_filename: str):
-        """단일 파일 업로드 (내부 구현)."""
+        """Upload a single file (internal implementation)."""
         pass
 
     @abstractmethod
     def _ensure_remote_dir(self, remote_dir: str):
-        """원격 디렉토리 생성 (없을 경우)."""
+        """Create remote directory if it does not exist."""
         pass
 
     @property
     def supports_streaming(self) -> bool:
-        """스트리밍 업로드 지원 여부. 하위 클래스에서 오버라이드."""
+        """Whether streaming upload is supported. Override in subclasses."""
         return False
 
     def upload(self, local_path: str, remote_filename: str = None):
-        """재시도 로직 포함 파일 업로드 (로컬 파일 기반)."""
+        """Upload a file from local path with retry logic."""
         if remote_filename is None:
             remote_filename = os.path.basename(local_path)
 
         for attempt in range(1, self.retry_count + 1):
             try:
                 self._upload_file(local_path, remote_filename)
-                logger.info("업로드 완료: %s → %s/%s", local_path, self.remote_path, remote_filename)
+                logger.info("Upload complete: %s → %s/%s", local_path, self.remote_path, remote_filename)
                 return
             except Exception as e:
                 self._retry_or_raise(attempt, remote_filename, e)
@@ -68,27 +68,28 @@ class BaseUploader(ABC):
     def stream_upload(self, chunk_iterator, remote_filename: str,
                       chunk_size: int = 65536) -> int:
         """
-        스트리밍 업로드: HTTP response chunks를 로컬 저장 없이 원격 서버로 직접 전송.
+        Streaming upload: pipe HTTP response chunks directly to remote server
+        without writing to local disk.
 
         Args:
-            chunk_iterator: iter_content() 등에서 나오는 bytes chunk 이터레이터
-            remote_filename: 원격 파일명
-            chunk_size: 청크 크기
+            chunk_iterator: bytes chunk iterator from iter_content() etc.
+            remote_filename: target filename on remote server
+            chunk_size: chunk size in bytes
 
         Returns:
-            int: 전송된 총 바이트 수
+            int: total bytes transferred
         """
-        raise NotImplementedError("이 프로토콜은 스트리밍 업로드를 지원하지 않음")
+        raise NotImplementedError("This protocol does not support streaming upload")
 
     def _retry_or_raise(self, attempt: int, filename: str, error: Exception):
-        """재시도 또는 예외 발생."""
+        """Retry or raise exception."""
         logger.warning(
-            "업로드 실패 (시도 %d/%d): %s — %s",
+            "Upload failed (attempt %d/%d): %s — %s",
             attempt, self.retry_count, filename, str(error)[:200]
         )
         if attempt < self.retry_count:
             wait = self.retry_delay * (2 ** (attempt - 1))
-            logger.info("  %d초 후 재시도...", wait)
+            logger.info("  Retrying in %ds...", wait)
             time.sleep(wait)
             try:
                 self.disconnect()
@@ -97,7 +98,7 @@ class BaseUploader(ABC):
                 pass
         else:
             raise UploadError(
-                f"{filename} 업로드 실패 ({self.retry_count}회 시도)"
+                f"Upload failed for {filename} after {self.retry_count} attempts"
             ) from error
 
     def __enter__(self):
@@ -109,7 +110,7 @@ class BaseUploader(ABC):
 
 
 class LocalUploader(BaseUploader):
-    """로컬 파일 시스템 저장 (업로드 비활성화 시 기본값)."""
+    """Local filesystem save (default when upload is disabled)."""
 
     def __init__(self, local_path: str = "./download", **kwargs):
         super().__init__(remote_path=local_path, **kwargs)
@@ -122,7 +123,7 @@ class LocalUploader(BaseUploader):
         pass
 
     def _upload_file(self, local_path: str, remote_filename: str):
-        # 로컬은 downloader에서 직접 저장하므로 별도 처리 불필요
+        # Local files are saved directly by the downloader; no action needed
         pass
 
     def _ensure_remote_dir(self, remote_dir: str):
@@ -130,7 +131,7 @@ class LocalUploader(BaseUploader):
 
 
 class FTPUploader(BaseUploader):
-    """FTP 프로토콜을 통한 업로드."""
+    """Upload via FTP protocol."""
 
     def __init__(self, host: str, port: int = 21,
                  username: str = "anonymous", password: str = "",
@@ -145,7 +146,7 @@ class FTPUploader(BaseUploader):
         self.ftp = None
 
     def connect(self):
-        logger.info("FTP 연결: %s:%d", self.host, self.port)
+        logger.info("FTP connecting: %s:%d", self.host, self.port)
         if self.use_tls:
             self.ftp = ftplib.FTP_TLS()
         else:
@@ -157,9 +158,9 @@ class FTPUploader(BaseUploader):
         if self.use_tls:
             self.ftp.prot_p()
 
-        # 원격 경로로 이동 (없으면 생성)
+        # Navigate to remote path (create if missing)
         self._ensure_remote_dir(self.remote_path)
-        logger.info("FTP 연결 완료: %s", self.remote_path)
+        logger.info("FTP connected: %s", self.remote_path)
 
     def disconnect(self):
         if self.ftp:
@@ -180,29 +181,29 @@ class FTPUploader(BaseUploader):
         remote_filepath = f"{self.remote_path}/{remote_filename}".replace("//", "/")
         file_size = os.path.getsize(local_path)
 
-        logger.info("FTP 업로드: %s (%.2f MB)", remote_filename, file_size / (1024 * 1024))
+        logger.info("FTP upload: %s (%.2f MB)", remote_filename, file_size / (1024 * 1024))
 
         with open(local_path, "rb") as f:
             self.ftp.storbinary(f"STOR {remote_filepath}", f, blocksize=65536)
 
     def stream_upload(self, chunk_iterator, remote_filename: str,
                       chunk_size: int = 65536) -> int:
-        """FTP 스트리밍: chunk를 BytesIO 파이프로 FTP STOR에 직접 전송."""
+        """FTP streaming: pipe chunks directly to FTP STOR via ChunkPipe."""
         remote_filepath = f"{self.remote_path}/{remote_filename}".replace("//", "/")
         total_bytes = 0
 
-        logger.info("FTP 스트리밍 업로드: %s", remote_filename)
+        logger.info("FTP streaming upload: %s", remote_filename)
 
         # Collect chunks into a pipe that storbinary can read from
         pipe = _ChunkPipe(chunk_iterator)
         self.ftp.storbinary(f"STOR {remote_filepath}", pipe, blocksize=chunk_size)
         total_bytes = pipe.bytes_read
 
-        logger.info("FTP 스트리밍 완료: %s (%.2f MB)", remote_filename, total_bytes / (1024 * 1024))
+        logger.info("FTP streaming complete: %s (%.2f MB)", remote_filename, total_bytes / (1024 * 1024))
         return total_bytes
 
     def _ensure_remote_dir(self, remote_dir: str):
-        """디렉토리 경로를 재귀적으로 생성."""
+        """Recursively create directory path on FTP server."""
         parts = remote_dir.strip("/").split("/")
         current = ""
         for part in parts:
@@ -217,7 +218,7 @@ class FTPUploader(BaseUploader):
 
 
 class SMBUploader(BaseUploader):
-    """SMB/CIFS 프로토콜을 통한 업로드."""
+    """Upload via SMB/CIFS protocol."""
 
     def __init__(self, host: str, share: str,
                  username: str = "", password: str = "",
@@ -237,11 +238,11 @@ class SMBUploader(BaseUploader):
             import smbclient
         except ImportError:
             raise UploadError(
-                "SMB 지원에 smbclient 패키지가 필요함. "
-                "pip install smbprotocol 로 설치 필요."
+                "SMB support requires the smbclient package. "
+                "Install with: pip install smbprotocol"
             )
 
-        logger.info("SMB 연결: //%s/%s", self.host, self.share)
+        logger.info("SMB connecting: //%s/%s", self.host, self.share)
 
         smbclient.register_session(
             self.host,
@@ -251,16 +252,16 @@ class SMBUploader(BaseUploader):
         )
         self._conn = smbclient
 
-        # 원격 디렉토리 확인/생성
+        # Verify/create remote directory
         self._ensure_remote_dir(self.remote_path)
-        logger.info("SMB 연결 완료: //%s/%s%s", self.host, self.share, self.remote_path)
+        logger.info("SMB connected: //%s/%s%s", self.host, self.share, self.remote_path)
 
     def disconnect(self):
-        # smbclient는 세션 기반이므로 별도 종료 불필요
+        # smbclient is session-based; no explicit close needed
         self._conn = None
 
     def _smb_path(self, filename: str = "") -> str:
-        """SMB UNC 경로 생성."""
+        """Build SMB UNC path."""
         base = f"\\\\{self.host}\\{self.share}"
         remote = self.remote_path.replace("/", "\\").strip("\\")
         if remote:
@@ -277,7 +278,7 @@ class SMBUploader(BaseUploader):
         remote_filepath = self._smb_path(remote_filename)
         file_size = os.path.getsize(local_path)
 
-        logger.info("SMB 업로드: %s (%.2f MB)", remote_filename, file_size / (1024 * 1024))
+        logger.info("SMB upload: %s (%.2f MB)", remote_filename, file_size / (1024 * 1024))
 
         with open(local_path, "rb") as local_f:
             with self._conn.open_file(remote_filepath, mode="wb") as remote_f:
@@ -289,11 +290,11 @@ class SMBUploader(BaseUploader):
 
     def stream_upload(self, chunk_iterator, remote_filename: str,
                       chunk_size: int = 65536) -> int:
-        """SMB 스트리밍: chunk를 직접 원격 파일에 기록."""
+        """SMB streaming: write chunks directly to remote file."""
         remote_filepath = self._smb_path(remote_filename)
         total_bytes = 0
 
-        logger.info("SMB 스트리밍 업로드: %s", remote_filename)
+        logger.info("SMB streaming upload: %s", remote_filename)
 
         with self._conn.open_file(remote_filepath, mode="wb") as remote_f:
             for chunk in chunk_iterator:
@@ -301,11 +302,11 @@ class SMBUploader(BaseUploader):
                     remote_f.write(chunk)
                     total_bytes += len(chunk)
 
-        logger.info("SMB 스트리밍 완료: %s (%.2f MB)", remote_filename, total_bytes / (1024 * 1024))
+        logger.info("SMB streaming complete: %s (%.2f MB)", remote_filename, total_bytes / (1024 * 1024))
         return total_bytes
 
     def _ensure_remote_dir(self, remote_dir: str):
-        """디렉토리 경로를 재귀적으로 생성."""
+        """Recursively create directory path on SMB server."""
         parts = remote_dir.strip("/").split("/")
         current_path = f"\\\\{self.host}\\{self.share}"
 
@@ -316,19 +317,19 @@ class SMBUploader(BaseUploader):
             try:
                 self._conn.mkdir(current_path)
             except OSError:
-                pass  # 이미 존재
+                pass  # Already exists
 
 
 def create_uploader(protocol: str, **kwargs) -> BaseUploader:
     """
-    프로토콜에 따라 적절한 Uploader 인스턴스 생성.
+    Create an Uploader instance for the given protocol.
 
     Args:
         protocol: "local", "ftp", "smb"
-        **kwargs: 각 프로토콜별 설정값
+        **kwargs: protocol-specific configuration values
 
     Returns:
-        BaseUploader 구현체
+        BaseUploader implementation
     """
     protocol = protocol.lower().strip()
 
@@ -365,13 +366,13 @@ def create_uploader(protocol: str, **kwargs) -> BaseUploader:
         )
 
     else:
-        raise ValueError(f"지원하지 않는 프로토콜: {protocol}. (local, ftp, smb 중 선택)")
+        raise ValueError(f"Unsupported protocol: {protocol}. Choose from: local, ftp, smb")
 
 
 class _ChunkPipe:
     """
-    HTTP response chunk iterator를 file-like read() 인터페이스로 변환.
-    ftplib.storbinary()가 read() 호출로 데이터를 가져갈 수 있도록 함.
+    Adapts an HTTP response chunk iterator to a file-like read() interface.
+    Allows ftplib.storbinary() to pull data via read() calls.
     """
 
     def __init__(self, chunk_iterator):
