@@ -61,6 +61,7 @@ Environment Variables:
   USER_ID         (required) GoPro user ID
   ACTION          list | download (default: download)
   DOWNLOAD_MODE   zip | individual (default: zip)
+  DOWNLOAD_QUALITY Preferred quality: source | high_res_proxy_mp4 etc. (default: source)
   WORKERS         Parallel workers for individual mode (default: 3)
   START_PAGE      Starting page number (default: 1)
   PAGES           Number of pages to process (default: 1000000)
@@ -95,6 +96,11 @@ Upload Variables (optional):
         default=env_str("DOWNLOAD_MODE", "zip"),
         choices=["zip", "individual"],
         help="Download mode (default: zip)",
+    )
+    parser.add_argument(
+        "--quality",
+        default=env_str("DOWNLOAD_QUALITY", "source"),
+        help="Preferred download quality (default: source)",
     )
     parser.add_argument(
         "--workers",
@@ -184,6 +190,7 @@ def main():
         user_id=user_id,
         retry_count=args.retry_count,
         retry_delay=args.retry_delay,
+        quality=args.quality,
     )
 
     # Validate authentication

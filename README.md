@@ -81,6 +81,7 @@ All settings are configurable via environment variables:
 | `USER_ID` | GoPro user ID | — | ✅ |
 | `ACTION` | `list` or `download` | `download` | |
 | `DOWNLOAD_MODE` | `zip` or `individual` | `zip` | |
+| `DOWNLOAD_QUALITY`| Preferred quality (e.g. `source`, `high_res_proxy_mp4`) | `source` | |
 | `WORKERS` | Parallel download workers | `3` | |
 | `START_PAGE` | Starting page number | `1` | |
 | `PAGES` | Number of pages to process | `1000000` | |

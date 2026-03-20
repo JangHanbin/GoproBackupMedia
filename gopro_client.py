@@ -34,9 +34,11 @@ class GoProClient:
 
     def __init__(self, auth_token: str, user_id: str,
                  retry_count: int = 5, retry_delay: int = 5,
-                 connect_timeout: int = 30, read_timeout: int = 120):
+                 connect_timeout: int = 30, read_timeout: int = 120,
+                 quality: str = "source"):
         self.auth_token = auth_token
         self.user_id = user_id
+        self.quality = quality
         self.retry_count = retry_count
         self.retry_delay = retry_delay
         self.connect_timeout = connect_timeout
@@ -233,10 +235,16 @@ class GoProClient:
                                     return url_data[key]
                 variations = data.get("_embedded", {}).get("variations", [])
                 if variations:
-                    # Always prefer the original 'source' variation first
+                    # 1. Try to find the exact requested quality
                     for v in variations:
-                        if v.get("label") == "source" and "url" in v:
+                        if v.get("label") == self.quality and "url" in v:
                             return v["url"]
+
+                    # 2. If requested quality not found and it was not 'source', fallback to 'source'
+                    if self.quality != "source":
+                        for v in variations:
+                            if v.get("label") == "source" and "url" in v:
+                                return v["url"]
 
                 # Fallback to the first available file
                 files = data.get("_embedded", {}).get("files", [])
