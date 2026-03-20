@@ -226,6 +226,7 @@ make release
 | `ChunkedEncodingError` 발생 | `RETRY_COUNT`, `RETRY_DELAY` 값 증가 |
 | 다운로드 속도 개선 | `WORKERS` 값 증가 (individual 모드에서만 유효) |
 | 다운로드 도중 토큰 만료 | 새 토큰으로 재실행 — 이미 받은 파일은 자동으로 건너뜀 |
+| 웹 UI 개수와 다운로드 개수가 다름 | 웹 UI는 오류가 발생한 파일(failure)이나 처리 중인 파일(transcoding)을 숨기지만, 이 툴은 계정에 저장된 모든 파일을 가져오므로 개수가 더 많을 수 있습니다. |
 
 ---
 

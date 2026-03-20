@@ -227,6 +227,7 @@ make release
 | `ChunkedEncodingError` | Increase `RETRY_COUNT` and `RETRY_DELAY` |
 | Downloads too slow | Increase `WORKERS` (individual mode only) |
 | Token expires during download | Re-run with a fresh token; already-downloaded files will be skipped |
+| Download count > Web UI count | The web UI hides processing (`transcoding`) or corrupted (`failure`) media, but this tool downloads all items present in your account. |
 
 ---
 
