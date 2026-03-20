@@ -62,6 +62,7 @@ Environment Variables:
   ACTION          list | download (default: download)
   DOWNLOAD_MODE   zip | individual (default: zip)
   DOWNLOAD_QUALITY Preferred quality: source | high_res_proxy_mp4 etc. (default: source)
+  TARGET_IDS      Comma-separated list of media IDs to download (default: empty for all)
   WORKERS         Parallel workers for individual mode (default: 3)
   START_PAGE      Starting page number (default: 1)
   PAGES           Number of pages to process (default: 1000000)
@@ -101,6 +102,11 @@ Upload Variables (optional):
         "--quality",
         default=env_str("DOWNLOAD_QUALITY", "source"),
         help="Preferred download quality (default: source)",
+    )
+    parser.add_argument(
+        "--target-ids",
+        default=env_str("TARGET_IDS", ""),
+        help="Comma-separated list of media IDs to download specifically (default: empty)",
     )
     parser.add_argument(
         "--workers",
@@ -263,6 +269,9 @@ def main():
             )
             uploader.connect()
 
+        target_ids_str = args.target_ids
+        target_ids = [tid.strip() for tid in target_ids_str.split(",")] if target_ids_str else None
+
         downloader = Downloader(
             client=client,
             download_path=args.download_path,
@@ -273,6 +282,7 @@ def main():
             retry_delay=args.retry_delay,
             progress_mode=args.progress_mode,
             uploader=uploader,
+            target_ids=target_ids,
         )
 
         stats = downloader.download_all(media_pages)

@@ -32,7 +32,8 @@ class Downloader:
                  chunk_size: int = 65536,
                  retry_count: int = 3, retry_delay: int = 5,
                  progress_mode: str = "noline",
-                 uploader: BaseUploader = None):
+                 uploader: BaseUploader = None,
+                 target_ids: list = None):
         self.client = client
         self.download_path = download_path
         self.mode = mode
@@ -42,6 +43,7 @@ class Downloader:
         self.retry_delay = retry_delay
         self.progress_mode = progress_mode
         self.uploader = uploader
+        self.target_ids = target_ids
 
         # Statistics
         self.stats = {
@@ -66,6 +68,16 @@ class Downloader:
         Returns:
             dict: Download statistics.
         """
+        if self.target_ids:
+            filtered_pages = {}
+            for page, items in media_pages.items():
+                f_items = [i for i in items if i.get("id") in self.target_ids]
+                if f_items:
+                    filtered_pages[page] = f_items
+            media_pages = filtered_pages
+            if not media_pages:
+                logger.warning("No media matched TARGET_IDS. Exiting early.")
+                return self.stats
         if self.mode == "zip":
             self._download_all_zip(media_pages)
         elif self.mode == "individual":

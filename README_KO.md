@@ -81,6 +81,7 @@ docker run --rm \
 | `ACTION` | `list` 또는 `download` | `download` | |
 | `DOWNLOAD_MODE` | `zip` 또는 `individual` | `zip` | |
 | `DOWNLOAD_QUALITY`| 다운로드 화질 (예: `source`, `high_res_proxy_mp4` 등) | `source` | |
+| `TARGET_IDS` | 특정 파일만 다운로드 시 쉼표로 구분한 `media_id` 목록 | — | |
 | `WORKERS` | 병렬 다운로드 워커 수 | `3` | |
 | `START_PAGE` | 시작 페이지 번호 | `1` | |
 | `PAGES` | 처리할 페이지 수 | `1000000` | |
